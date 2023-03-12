@@ -167,7 +167,9 @@ router.get("/:item", auth.optional, function(req, res, next) {
   ])
     .then(function(results) {
       var user = results[0];
-
+      if(item.image === "") {
+        item.image = "/placeholder.png";
+      }
       return res.json({ item: req.item.toJSONFor(user) });
     })
     .catch(next);

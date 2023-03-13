@@ -14,7 +14,6 @@ router.param("item", function(req, res, next, slug) {
       if (!item) {
         return res.sendStatus(404);
       }
-
       req.item = item;
 
       return next();
@@ -164,7 +163,6 @@ router.get("/:item", auth.optional, function(req, res, next) {
   ])
     .then(function(results) {
       var user = results[0];
-
       return res.json({ item: req.item.toJSONFor(user) });
     })
     .catch(next);

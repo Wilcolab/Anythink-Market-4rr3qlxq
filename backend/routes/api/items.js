@@ -14,9 +14,6 @@ router.param("item", function(req, res, next, slug) {
       if (!item) {
         return res.sendStatus(404);
       }
-      if(item.image === "") {
-        item.image = "https://vineeth123-png-friendly-trout-6467rxv75xwf4p7j-3001.preview.app.github.dev/placeholder.png";
-      }
       req.item = item;
 
       return next();
@@ -89,9 +86,6 @@ router.get("/", auth.optional, function(req, res, next) {
           items: await Promise.all(
             items.map(async function(item) {
               item.seller = await User.findById(item.seller);
-              if( item.image === "" ) {
-                item.image = "https://vineeth123-png-friendly-trout-6467rxv75xwf4p7j-3001.preview.app.github.dev/placeholder.png";
-              }
               return item.toJSONFor(user);
             })
           ),

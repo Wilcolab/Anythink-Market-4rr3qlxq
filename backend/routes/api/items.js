@@ -5,6 +5,18 @@ var Comment = mongoose.model("Comment");
 var User = mongoose.model("User");
 var auth = require("../auth");
 const { sendEvent } = require("../../lib/event");
+require("dotenv").config();
+
+// openai imports
+const { Configuration, OpenAIApi } = require("openai");
+const configuration = new Configuration({
+    apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
+const chat_completion = await openai.createChatCompletion({
+    model: "gpt-3.5-turbo",
+    messages: [{ role: "user", content: "Hello world" }],
+});
 
 // Preload item objects on routes with ':item'
 router.param("item", function(req, res, next, slug) {
@@ -148,6 +160,20 @@ router.post("/", auth.required, function(req, res, next) {
 
       item.seller = user;
 
+      // integrate with DALL-E if there's no image URL
+      if (!item.image) {
+        const getImageURLFromDALLE = async (description) => {
+          const response = await openai.createImage({
+            prompt: description,
+            n: 1,
+            size: "256x256",
+          });
+          image_url = response.data.data[0].url;
+          return image_url;
+        }
+
+        item.image = getImageURLFromDALLE(item.description);
+      }
       return item.save().then(function() {
         sendEvent('item_created', { item: req.body.item })
         return res.json({ item: item.toJSONFor(user) });

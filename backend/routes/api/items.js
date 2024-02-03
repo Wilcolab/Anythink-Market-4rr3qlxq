@@ -6,6 +6,9 @@ var User = mongoose.model("User");
 var auth = require("../auth");
 const { sendEvent } = require("../../lib/event");
 
+const {OpenAI}= require('openai');
+const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
+
 // Preload item objects on routes with ':item'
 router.param("item", function(req, res, next, slug) {
   Item.findOne({ slug: slug })
@@ -137,7 +140,7 @@ router.get("/feed", auth.required, function(req, res, next) {
   });
 });
 
-router.post("/", auth.required, function(req, res, next) {
+router.post("/", auth.required, async function(req, res, next) {
   User.findById(req.payload.id)
     .then(function(user) {
       if (!user) {
@@ -147,7 +150,9 @@ router.post("/", auth.required, function(req, res, next) {
       var item = new Item(req.body.item);
 
       item.seller = user;
-
+      if (item.image === undefined || item.image === '') {
+        item.image = getURLFromDallE();
+      }
       return item.save().then(function() {
         sendEvent('item_created', { item: req.body.item })
         return res.json({ item: item.toJSONFor(user) });
@@ -155,6 +160,16 @@ router.post("/", auth.required, function(req, res, next) {
     })
     .catch(next);
 });
+
+async function getURLFromDallE() {
+  const response = await openai.createImage({
+    model: "dall-e-3",
+    prompt: "a white siamese cat",
+    n: 1,
+    size: "1024x1024",
+  });
+  image_url = response.data.data[0].url;
+}
 
 // return a item
 router.get("/:item", auth.optional, function(req, res, next) {
